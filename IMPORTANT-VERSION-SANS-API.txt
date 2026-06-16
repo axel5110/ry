@@ -1,0 +1,14 @@
+VERSION SANS /api/carburants
+
+Cette version ne dépend plus d'une API Cloudflare.
+Le comparateur appelle directement l'API publique data.economie.gouv.fr depuis le navigateur.
+
+Avantages :
+- plus de server.js
+- plus de _worker.js
+- plus de functions
+- plus simple à déployer
+- affichage des prix carburants directs
+
+Dans GitHub, garde uniquement les fichiers de ce ZIP.
+Il n'y a aucun sous-dossier.
