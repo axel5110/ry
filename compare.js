@@ -104,7 +104,9 @@
       const maj = clean(item.updateDateText);
       const mapQuery = encodeURIComponent([address, cp, city].filter(Boolean).join(" "));
       const sourceBadge = item.nameSource ? `<span class="name-source">${clean(item.nameSource)}</span>` : "";
-      const info = `${label}${distance ? " · à " + distance : ""}${maj ? " · Mis à jour : " + maj : ""}`;
+      const shownFuel = item.displayedFuel ? (fuelLabels[item.displayedFuel] || item.displayedFuel.toUpperCase()) : label;
+      const unavailableText = item.selectedFuelUnavailable ? `Carburant demandé non trouvé · affichage ${shownFuel}` : shownFuel;
+      const info = `${unavailableText}${distance ? " · à " + distance : ""}${maj ? " · Mis à jour : " + maj : ""}`;
 
       const card = document.createElement("div");
       card.className = "result-card";
@@ -118,7 +120,7 @@
             ${mapQuery ? `<a class="map-link" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${mapQuery}">Itinéraire</a>` : ""}
           </div>
         </div>
-        <div class="price-badge">${formatPrice(item.price)}<span class="date">${label}</span></div>
+        <div class="price-badge">${formatPrice(item.price)}<span class="date">${item.displayedFuel ? (fuelLabels[item.displayedFuel] || item.displayedFuel.toUpperCase()) : label}</span></div>
       `;
       results.appendChild(card);
     });

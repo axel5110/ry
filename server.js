@@ -150,9 +150,23 @@ async function postcodesFromCity(q) {
   const query = clean(q);
   const n = normalize(query);
 
+  // Tergnier / 02700 : on élargit aux communes proches, sinon l'API peut retourner 0 station.
+  if (query === "02700" || n.includes("tergnier")) {
+    return { codes: ["02700", "02300", "02800"], center: { lat: 49.6566, lon: 3.2870 } };
+  }
+
+  // Chauny et alentours
+  if (query === "02300" || n.includes("chauny") || n.includes("viry-noureuil")) {
+    return { codes: ["02300", "02700", "02800"], center: { lat: 49.615, lon: 3.218 } };
+  }
+
+  // Beautor / La Fère
+  if (query === "02800" || n.includes("beautor") || n.includes("la fere") || n.includes("la-fere")) {
+    return { codes: ["02800", "02700", "02300"], center: { lat: 49.652, lon: 3.345 } };
+  }
+
   if (/^\d{5}$/.test(query)) return { codes: [query], center: null };
   if (n === "paris") return { codes: PARIS_CP, center: { lat: 48.8566, lon: 2.3522 } };
-  if (n.includes("tergnier")) return { codes: TERGNIER_CP, center: { lat: 49.6566, lon: 3.2870 } };
 
   const params = new URLSearchParams({
     nom: query,
@@ -300,6 +314,57 @@ async function apiCarburants(request) {
     if (origin && a.distanceKm !== null && b.distanceKm !== null) return a.distanceKm - b.distanceKm;
     return a.price - b.price;
   }).slice(0, 20);
+
+  // Si le carburant choisi ne donne aucun résultat, on tente automatiquement les autres carburants.
+  // Ça évite d'afficher 0 station autour de Tergnier quand E10 n'est pas renseigné exactement.
+  if (!results.length) {
+    const fallbackFuels = ["gazole", "sp95", "sp98", "e10", "e85", "gplc"].filter(f => f !== fuel);
+    for (const fallbackFuel of fallbackFuels) {
+      const fallbackFields = FUEL_FIELDS[fallbackFuel];
+      let fallbackResults = await Promise.all(rows.map(async row => {
+        const price = Number(String(row[fallbackFields.price] ?? "").replace(",", "."));
+        if (!Number.isFinite(price) || price <= 0) return null;
+
+        const coords = getCoords(row);
+        const distanceKm = origin ? haversineKm(origin, coords) : null;
+
+        return {
+          id: clean(row.id),
+          name: fallbackName(row),
+          nameSource: "Nom déduit",
+          address: clean(row.adresse),
+          cp: clean(row.cp),
+          city: clean(row.ville),
+          price,
+          displayedFuel: fallbackFuel,
+          selectedFuelUnavailable: true,
+          updateDateText: formatDate(row[fallbackFields.update]),
+          lat: coords?.lat ?? null,
+          lon: coords?.lon ?? null,
+          distanceKm,
+          distanceText: formatDistance(distanceKm)
+        };
+      }));
+
+      fallbackResults = fallbackResults.filter(Boolean).sort((a, b) => {
+        if (origin && a.distanceKm !== null && b.distanceKm !== null) return a.distanceKm - b.distanceKm;
+        return a.price - b.price;
+      }).slice(0, 20);
+
+      if (fallbackResults.length) {
+        return json({
+          meta: {
+            q,
+            fuel,
+            postcodes: codes,
+            fallbackFuel,
+            message: `Aucun prix ${FUEL_FIELDS[fuel].label} trouvé. Affichage des stations proches avec ${FUEL_FIELDS[fallbackFuel].label}.`
+          },
+          results: fallbackResults
+        });
+      }
+    }
+  }
 
   return json({
     meta: {
