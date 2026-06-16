@@ -1,0 +1,20 @@
+ZIP SANS SOUS-DOSSIER
+
+Tous les fichiers sont à la racine.
+Il n'y a PAS de dossier assets, functions, node_modules.
+
+Fichiers à envoyer dans GitHub :
+- index.html
+- style.css
+- compare.js
+- server.js
+- wrangler.jsonc
+- .assetsignore
+- carburio-logo.png
+- carburio-wordmark.png
+- confidentialite.html
+- mentions-legales.html
+- robots.txt
+- sitemap.xml
+
+Supprime les anciens fichiers GitHub avant d'envoyer cette version.
